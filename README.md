@@ -22,7 +22,7 @@ npm install dotenv
 
 Then create a .env file and put yout private key of the metamask account
 ```bash
-PRIVATE_KEY={@your private key}; 
+PRIVATE_KEY={@your private key}
 ```
 
 
