@@ -1,5 +1,5 @@
 node_modules
-random.env
+.env
 coverage
 coverage.json
 typechain
