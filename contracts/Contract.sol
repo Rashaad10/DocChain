@@ -16,6 +16,8 @@ contract ClaimsContract {
         bool exists;
         Claim[] claims; // Array of claims
     }
+    
+    event ClaimMade(address indexed claimedUser, string field, string value, address issuer);
 
     uint public totalUser;
     // Mapping from an address to a user
@@ -47,6 +49,8 @@ contract ClaimsContract {
 
         // Add the claim to the user's claims
         users[userAddress].claims.push(newClaim);
+
+        emit ClaimMade(userAddress, field, value, msg.sender);
     }
 
     // Function to get the number of claims a user has
