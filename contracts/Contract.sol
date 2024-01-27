@@ -26,19 +26,6 @@ contract ClaimsContract {
         RequestedClaim[] reqclaims;
     }
 
-    event ClaimMade(
-        address indexed claimedUser,
-        string field,
-        string value,
-        address issuer
-    );
-    event ClaimRequested(
-        address indexed requestTo,
-        address indexed requestFrom,
-        string field,
-        string value
-    );
-
     uint public totalUser;
     // Mapping from an address to a user
     mapping(address => User) public users;
@@ -70,6 +57,24 @@ contract ClaimsContract {
 
         emit ClaimRequested(userAddress, msg.sender, field, value);
     }
+
+    //function to request a claim from the user
+    function requestClaim(address userAddress, string memory field, string memory value) public {
+        require(users[userAddress].exists, "User does not exist");
+
+        RequestedClaim memory newReqClaim = RequestedClaim({
+            field: field,
+            value: value,
+            requestTo: userAddress,
+            requestBy: msg.sender,
+            requested: true
+        });
+
+        users[msg.sender].reqclaims.push(newReqClaim);
+
+        emit ClaimRequested(userAddress, msg.sender, field, value);
+    }
+
 
     //get total number of User
     function getNoOfUser() public view returns (uint) {
@@ -103,8 +108,8 @@ contract ClaimsContract {
         return users[userAddress].claims.length;
     }
 
-    //function to request for claims from another user
-
+    //function to return all the claims of a user
+    
     // Function to return all claims of a user
     function getAllClaims(
         address userAddress
