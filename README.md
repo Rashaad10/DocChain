@@ -14,19 +14,14 @@ ignore the warnings
 
 ## dotenv
 
-install dotenv package and
-
-```bash
-npm install dotenv 
-```
-
-Then create a .env file and put yout private key of the metamask account
+Create a .env file and put yout private key of the metamask account 
 ```bash
 PRIVATE_KEY={@your private key}
 ```
 
 
 ## deployment
+
 ```bash
 npm run deploy
 ```
