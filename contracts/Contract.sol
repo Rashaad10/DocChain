@@ -30,6 +30,9 @@ contract ClaimsContract {
     // Mapping from an address to a user
     mapping(address => User) public users;
 
+    event ClaimMade(address indexed claimedUser, string field, string value, address issuer);
+    event ClaimRequested(address indexed requestTo, address indexed requestFrom, string field, string value);
+
     // Function to add a new user
     function addUser(address userAddress) public {
         require(!users[userAddress].exists, "User already exists");
