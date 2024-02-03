@@ -36,11 +36,11 @@ contract ClaimsContract {
         uint no_of_requests;
         Claim[] claims; // Array of claims
         mapping(string => Claim) feildClaims;
-        mapping(uint => RequestedInfo) inforequests;
+        mapping(uint => RequestedInfo) inforequests; //request of others who want my information // all the requests from me
         RequestedClaim[] reqclaims; // the claims that I requested for
         RequestedClaim[] reqfrommeclaims; //the claims that was requested from me
-        ReceivedInfo[] recinfos;
-    }
+        ReceivedInfo[] recinfos; //all the information I recieved from others
+    } 
 
     event UserAdded(
         address user
@@ -71,6 +71,13 @@ contract ClaimsContract {
     mapping(address => User) private users;
     // mapping(uint => RequestedClaim) private requests;
     // uint private countRequests;
+
+    event Yourid(
+        address Youraddress
+    );
+    function showUser() public {
+        emit Yourid(msg.sender);
+    }
 
     // Function to add a new user
     function addUser(address userAddress) public {
@@ -110,18 +117,6 @@ contract ClaimsContract {
         // countRequests++;
     }
 
-    //Function to Read request
-    // function readRequestClaim(
-    //     uint requestNumber
-    // ) public view returns (RequestedClaim memory) {
-    //     require(
-    //         msg.sender == requests[requestNumber].requestTo ||
-    //             msg.sender == requests[requestNumber].requestBy,
-    //         "You cannot see this request"
-    //     );
-    //     return requests[requestNumber];
-    // }
-
     // Function to make a claim about a user
     function makeClaim(
         address userAddress,
@@ -155,10 +150,15 @@ contract ClaimsContract {
         return users[userAddress].claims.length;
     }
 
+    //event called when someone calls getAllClaims
+    // event getAllClaimscalled(
+    //     address userAdress
+    // );
+
     // Function to return all claims of a user
     function getAllClaims() public view returns (string[] memory, string[] memory, address[] memory) {
         address userAddress = msg.sender;
-        // require(users[userAddress].exists, "User does not exist");
+        require(users[userAddress].exists, "User does not exist");
         uint claimCount = users[userAddress].claims.length;
 
         // Initialize arrays to hold the claim data
@@ -173,23 +173,24 @@ contract ClaimsContract {
             values[i] = claim.value;
             issuers[i] = claim.issuer;
         }
-
+        // emit getAllClaimscalled(userAddress);
         return (fields, values, issuers);
     }
 
     //Functioin to get the count of claims that user requested
     function getRequestedClaimsCount(address userAddress) public view returns (uint) {
-        require(
-            msg.sender == userAddress,
-            "You are not entitled for calling this function"
-        );
+        require( msg.sender == userAddress,"You are not entitled for calling this function");
         require(users[userAddress].exists, "User does not exist");
         return users[userAddress].reqclaims.length;
     }
 
+    // event getAllReqClaimsCalled(
+    //     address userAddress
+    // );
     //Function to get all the claims that user has requested
     function getAllReqClaims() public view returns (string[] memory, string[] memory, address[] memory, bool[] memory) {
         address userAddress = msg.sender;
+        // emit getAllReqClaimsCalled(msg.sender);
         require(users[userAddress].exists, "User does not exist");
         uint reqClaimCount = users[userAddress].reqclaims.length;
 
@@ -204,7 +205,7 @@ contract ClaimsContract {
             RequestedClaim storage reqclaim = users[userAddress].reqclaims[i];
             fields[i] = reqclaim.field;
             values[i] = reqclaim.value;
-            issuers[i] = reqclaim.requestTo;
+            issuers[i] = reqclaim.requestBy;
             status[i] = reqclaim.requested;
         }
 
@@ -212,11 +213,8 @@ contract ClaimsContract {
     }
 
     //Function to get the count of all the reqclaims that was requested from the user
-    function getReqFromMeCount(address userAddress) public view returns (uint) {
-        require(
-            msg.sender == userAddress,
-            "You are not entitled for calling this function"
-        );
+    function getReqFromMeClaimsCount(address userAddress) public view returns (uint) {
+        require( msg.sender == userAddress, "You are not entitled for calling this function");
         require(users[userAddress].exists, "User does not exist");
         return users[userAddress].reqfrommeclaims.length;
     }
@@ -224,6 +222,7 @@ contract ClaimsContract {
     //Function to get all the claims that was requested from user
     function getAllReqFromMeClaims() public view returns (string[] memory, string[] memory, address[] memory, bool[] memory) {
         address userAddress = msg.sender;
+        // emit getAllReqFromMeClaimsCalled(userAddress);
         require(users[userAddress].exists, "User does not exist");
         uint reqFromMeClaimCount = users[userAddress].reqfrommeclaims.length;
 
@@ -233,23 +232,73 @@ contract ClaimsContract {
         address[] memory issuers = new address[](reqFromMeClaimCount);
         bool[] memory status = new bool[](reqFromMeClaimCount);
 
-        // Populate the arrays
+        
         for (uint i = 0; i < reqFromMeClaimCount; i++) {
-            RequestedClaim storage reqclaim = users[userAddress].reqclaims[i];
-            fields[i] = reqclaim.field;
-            values[i] = reqclaim.value;
-            issuers[i] = reqclaim.requestTo;
-            status[i] = reqclaim.requested;
+            RequestedClaim storage reqfrommeclaim = users[userAddress].reqfrommeclaims[i];
+            fields[i] = reqfrommeclaim.field;
+            values[i] = reqfrommeclaim.value;
+            issuers[i] = reqfrommeclaim.requestTo;
+            status[i] = reqfrommeclaim.requested;
         }
 
         return (fields, values, issuers, status);
     }
 
+    event requestAnswered(
+        address requester,
+        address answerer
+    );
+
+    //indexOfQuery refers to indexing of request in reqfrommeclaims
+    //this will automatically call makeClaim function
+    function answeringRequestedClaim(uint indexOfQuery, uint num) public {
+    if (num == 1) {
+            // Response to claim request with num = 1
+            require(indexOfQuery < users[msg.sender].reqfrommeclaims.length, "Invalid index");
+
+            // Set requested to false for the claim in the requester's array
+            users[msg.sender].reqfrommeclaims[indexOfQuery].requested = false;
+
+            // Retrieve information about the claim
+            address userAddress = users[msg.sender].reqclaims[indexOfQuery].requestBy;
+            string memory field = users[msg.sender].reqclaims[indexOfQuery].field;
+            string memory value = users[msg.sender].reqclaims[indexOfQuery].value;
+
+            // Find the corresponding claim in the requester's array and set requested to false
+            uint maxLen = users[userAddress].reqclaims.length;
+            uint index;
+
+            for (uint i = 0; i < maxLen; i++) {
+                if (users[userAddress].reqclaims[i].requestBy == msg.sender &&
+                    keccak256(abi.encodePacked(users[userAddress].reqclaims[i].field)) == keccak256(abi.encodePacked(field)) &&
+                    keccak256(abi.encodePacked(users[userAddress].reqclaims[i].value)) == keccak256(abi.encodePacked(value))
+                ) {
+                    index = i;
+                    break;
+                }
+            }
+
+            // Set requested to false for the corresponding claim in the requester's array
+            if (index < maxLen) {
+                users[userAddress].reqclaims[index].requested = false;
+                
+                // Make the claim for the requester
+                makeClaim(userAddress, field, value);
+            }
+            emit requestAnswered(userAddress, msg.sender);
+        } else {
+            // Response to claim request with num not equal to 1
+            require(indexOfQuery < users[msg.sender].reqfrommeclaims.length, "Invalid index");
+            address userAddress = users[msg.sender].reqclaims[indexOfQuery].requestBy;
+            users[msg.sender].reqfrommeclaims[indexOfQuery].requested = false;
+            emit requestAnswered(userAddress, msg.sender);
+        }
+
+
+    }
+
     // Function to request the field's value from another user and return the claim made
-    function reqFieldInfo(
-        address userAddress,
-        string memory field
-    ) public returns (Claim memory) {
+    function reqFieldInfo(address userAddress,string memory field) public returns (Claim memory) {
         require(users[userAddress].exists, "User does not exist");
 
         RequestedInfo memory newRequestedInfo = RequestedInfo({
@@ -265,6 +314,23 @@ contract ClaimsContract {
         emit FieldInfoRequested(msg.sender, userAddress, field);
         return users[userAddress].feildClaims[field];
     }
+
+    // Function to get all the info field requested from me
+    function getAllFieldRequestFromMe() public view returns(string[] memory, address[] memory, bool[] memory){
+        address userAddress = msg.sender;
+        uint n = users[userAddress].no_of_requests;
+        string[] memory field = new string[](n);
+        address[] memory requestedBy = new address[](n);
+        bool[] memory answer = new bool[](n);
+        for(uint i=0;i<n;i++)
+        {
+            field[i] = users[userAddress].inforequests[i].field;
+            requestedBy[i] = users[userAddress].inforequests[i].requestedBy;
+            answer[i] = users[userAddress].inforequests[i].answered;
+        }
+        return (field , requestedBy , answer);
+    }
+    //I am not showing whatever requests I have made from another user.
 
     //function to both answer the request and deny the request
     //if num==1 than I will answer the query otherwise deny the query
@@ -295,10 +361,10 @@ contract ClaimsContract {
         emit FieldInfoRecieved(requestedBy , msg.sender);
     }
 
+   
     //function to get all the info recieved
     function getAllinfo() public view returns (string[] memory, string[] memory, address[] memory, address[] memory) {
         require(users[msg.sender].exists, "User does not exist");
-
         uint infoCount = users[msg.sender].recinfos.length;
 
         // Initialize arrays to hold the received info data
@@ -315,10 +381,8 @@ contract ClaimsContract {
             issuers[i] = info.claim.issuer;
             senders[i] = info.sender;
         }
-
+        
         return (fields, values, issuers , senders);
-    }
-
-  
+    }  
 
 }
