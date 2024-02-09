@@ -24,12 +24,13 @@ The DecisionVoting contract enables the creation of voting polls with predefined
 
 ---
 
-<!--#### Key Features
-Some key features of the site are:
-- LogIn / LogOut for Students
-- Update Status for Shopkeeperes
-- Register with Email Verification
-- Google Authentication...-->
+#### Key Features
+Some features of these contracts are:-
+
+- Decentralized management of property access.
+- Handles claims, requests, and ownership of documents.
+- Enables the creation of voting polls with predefined options.
+
 
 ---
 
