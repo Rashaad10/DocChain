@@ -55,7 +55,7 @@ ignore the warnings
 
 ## dotenv
 
-Create a .env file and put yout private key of the metamask account 
+Create a .env file and put your private key of the metamask account 
 ```bash
 PRIVATE_KEY={@your private key}
 ```
@@ -85,7 +85,7 @@ ignore the warnings
 
 ## dotenv
 
-Create a .env file and put yout private key of the metamask account 
+Create a .env file and put your private key of the metamask account 
 ```bash
 PRIVATE_KEY={@your private key}
 ```
