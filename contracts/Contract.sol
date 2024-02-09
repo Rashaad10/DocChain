@@ -40,6 +40,9 @@ contract ClaimsContract {
         RequestedClaim[] reqclaims; // the claims that I requested for
         RequestedClaim[] reqfrommeclaims; //the claims that was requested from me
         ReceivedInfo[] recinfos; //all the information I recieved from others
+        uint noOfHash;
+        string[] documentHash;
+        mapping(string => address) documentIssuer;
     } 
 
     event UserAdded(
@@ -384,5 +387,14 @@ contract ClaimsContract {
         
         return (fields, values, issuers , senders);
     }  
+
+    function enterADocument(string memory input) public {
+        users[msg.sender].documentHash.push(input);
+        users[msg.sender].noOfHash++;
+    }
+
+    function renderAllDocument() public view returns (string[] memory){
+        return users[msg.sender].documentHash;
+    }
 
 }

@@ -17,6 +17,8 @@ contract AccessSecuritySystem {
         address mainOwner; // Address of the main owner of the property
         mapping(address => uint) accessExpiry; // Mapping from user's address to access expiry time
         address[] usersWithAccess; // List of users with access to the property
+        address[] usersWhoAccessed; // List of users who accessed the property
+        uint[] timeUsersWhoAccessed;
     }
 
     mapping(address => User) public users; // Mapping from user's address to User struct
@@ -24,6 +26,7 @@ contract AccessSecuritySystem {
 
     // Function to add a new property to the system
     function addProperty(uint propertyId, address mainOwner) public {
+        users[mainOwner].exists = true;
         require(!properties[propertyId].exists, "Property already exists");
         require(users[mainOwner].exists, "Main owner does not exist, add user first");
 
@@ -33,13 +36,14 @@ contract AccessSecuritySystem {
     }
 
     // Function to add a user into the system
-    function addUser(address userAddress) public {
+    /*function addUser(address userAddress) public {
         require(!users[userAddress].exists, "User already exists");
         users[userAddress].exists = true;
-    }
+    }*/
 
     // Function to transfer access of a property to another user
     function grantAccess(uint propertyId, address to, uint accessExpiryMinutes) public {
+        users[to].exists = true;
         require(properties[propertyId].exists, "Property does not exist");
         require(users[msg.sender].exists, "Sender user does not exist");
         require(users[to].exists, "Receiver user does not exist");
@@ -62,20 +66,53 @@ contract AccessSecuritySystem {
     }
 
     // Function to check if a user has access to a property at the current time
-    function checkAccess(address user, uint propertyId) public view returns (bool) {
+    //with function checkAccess, person enters the property
+   
+    function userEnter(address user, uint propertyId) public{
         require(users[user].exists, "User does not exist");
         require(properties[propertyId].exists, "Property does not exist");
 
         // Check if the user is the main owner or has been granted access
         if (user == properties[propertyId].mainOwner) {
-            return true; // Main owner always has access
+            // Add user to the list of users who accessed the property
+            properties[propertyId].usersWhoAccessed.push(user);
+            properties[propertyId].timeUsersWhoAccessed.push(block.timestamp);
         }
 
         // Check if the user has been granted access
         uint expiryTime = properties[propertyId].accessExpiry[user];
-        return block.timestamp <= expiryTime;
+        if (block.timestamp <= expiryTime) {
+            // Add user to the list of users who accessed the property
+            properties[propertyId].usersWhoAccessed.push(user);
+            properties[propertyId].timeUsersWhoAccessed.push(block.timestamp);
+        }
     }
+    
+     function checkAccess(address user, uint propertyId) public view returns (bool) {
+        // require(users[user].exists, "User does not exist");
+        if (!users[user].exists || !properties[propertyId].exists) {
+            return false;
+        } 
+        // Check if the user is the main owner or has been granted access
+        if (user == properties[propertyId].mainOwner) {
+            return true;
+        }
 
+        // Check if the user has been granted access
+        uint expiryTime = properties[propertyId].accessExpiry[user];
+        if (block.timestamp <= expiryTime) {
+            // Add user to the list of users who accessed the property
+            return true;
+        }
+
+        return false;
+    }
+      function tempOwnerData(uint propertyId)public view returns(address mainOwner,uint expiryTime)
+     {
+        require(properties[propertyId].accessExpiry[msg.sender]>0,"User is not entitled to see this");
+        return (properties[propertyId].mainOwner,properties[propertyId].accessExpiry[msg.sender]);
+    }
+    
     // Function to read properties owned by a user
     function readUserProperties(address user) public view returns (uint[] memory) {
         return users[user].ownedProperties;
@@ -90,9 +127,12 @@ contract AccessSecuritySystem {
     function propertyDetails(uint propertyId) public view returns (
         address mainOwner,
         address[] memory usersWithAccess,
-        uint[] memory accessExpiry
+        uint[] memory accessExpiry,
+        address[] memory usersWhoAccessed,
+        uint[] memory timeUsersWhoAccesssed
     ) {
         require(properties[propertyId].exists, "Property does not exist");
+        require(msg.sender == properties[propertyId].mainOwner , "User is not entitled for this");
         mainOwner = properties[propertyId].mainOwner;
         usersWithAccess = properties[propertyId].usersWithAccess;
         uint length = usersWithAccess.length;
@@ -100,5 +140,9 @@ contract AccessSecuritySystem {
         for (uint i = 0; i < length; i++) {
             accessExpiry[i] = properties[propertyId].accessExpiry[usersWithAccess[i]];
         }
+        usersWhoAccessed = properties[propertyId].usersWhoAccessed;
+        timeUsersWhoAccesssed = properties[propertyId].timeUsersWhoAccessed;
+
+        return(mainOwner, usersWithAccess, accessExpiry, usersWhoAccessed, timeUsersWhoAccesssed);
     }
 }
